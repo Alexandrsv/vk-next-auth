@@ -1,8 +1,11 @@
-import NextAuth from "next-auth"
-import Providers from "next-auth/providers"
+import NextAuth from "next-auth";
+import Providers from "next-auth/providers";
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
+
+const apiVersion = "5.131";
+
 export default NextAuth({
   // https://next-auth.js.org/configuration/providers
   providers: [
@@ -23,6 +26,35 @@ export default NextAuth({
       },
     }),
     */
+    Providers.VK({
+      clientId: process.env.VK_CLIENT_ID,
+      clientSecret: process.env.VK_CLIENT_SECRET,
+      accessTokenUrl: `https://oauth.vk.com/access_token?v=${apiVersion}`,
+      requestTokenUrl: `https://oauth.vk.com/access_token?v=${apiVersion}`,
+      authorizationUrl: `https://oauth.vk.com/authorize?response_type=code&v=${apiVersion}&scope=2`,
+      profileUrl: `https://api.vk.com/method/users.get?fields=photo_100,email,country&v=${apiVersion}`,
+      scope: "friends,status,email,market,offline",
+      profile: (result, ...hz) => {
+        let _result$response$, _result$response;
+        let profile =
+          (_result$response$ =
+            (_result$response = result.response) === null ||
+            _result$response === undefined
+              ? undefined
+              : _result$response[0]) !== null && _result$response$ !== undefined
+            ? _result$response$
+            : {};
+        console.log({ profile, hz });
+        return {
+          id: profile.id,
+          name: [profile.first_name, profile.last_name]
+            .filter(Boolean)
+            .join(" "),
+          email: profile.email,
+          image: profile.photo_100,
+        };
+      },
+    }),
     Providers.Facebook({
       clientId: process.env.FACEBOOK_ID,
       clientSecret: process.env.FACEBOOK_SECRET,
@@ -31,7 +63,7 @@ export default NextAuth({
       clientId: process.env.GITHUB_ID,
       clientSecret: process.env.GITHUB_SECRET,
       // https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
-      scope: "read:user"
+      scope: "read:user",
     }),
     Providers.Google({
       clientId: process.env.GOOGLE_ID,
@@ -106,10 +138,23 @@ export default NextAuth({
   // when an action is performed.
   // https://next-auth.js.org/configuration/callbacks
   callbacks: {
-    // async signIn(user, account, profile) { return true },
-    // async redirect(url, baseUrl) { return baseUrl },
-    // async session(session, user) { return session },
-    // async jwt(token, user, account, profile, isNewUser) { return token }
+    // async signIn(User,provider,response,...hz) {
+    //   console.log('!!!!!!!!!!!!!!!signIn', {User,provider,hz},JSON.stringify(response))
+    //   console.log('!!!!!!!!!!!!!!!signIn')
+    //   return true
+    // },
+    // async redirect({ url, baseUrl }) {
+    //   console.log('redirect', url, baseUrl)
+    //   return baseUrl
+    // },
+    // async session({ session, token, user }) {
+    //   console.log('session',session, token, user)
+    //   return session
+    // },
+    // async jwt({ token, user, account, profile, isNewUser }) {
+    //   console.log('jwt',token, user, account, profile, isNewUse)
+    //   return token
+    // }
   },
 
   // Events are useful for logging
@@ -118,8 +163,7 @@ export default NextAuth({
 
   // You can set the theme to 'light', 'dark' or use 'auto' to default to the
   // whatever prefers-color-scheme is set to in the browser. Default is 'auto'
-  theme: 'light',
-
+  theme: "light",
   // Enable debug messages in the console if you are having problems
   debug: false,
-})
+});
